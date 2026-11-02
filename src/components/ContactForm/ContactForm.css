@@ -1,0 +1,59 @@
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: form-fade-in 0.4s ease;
+}
+
+.contact-form h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.field input,
+.field select {
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  font: inherit;
+  font-weight: 400;
+}
+
+.field input:focus,
+.field select:focus {
+  outline: 2px solid var(--color-chat);
+  outline-offset: 1px;
+}
+
+.field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.contact-form .btn {
+  width: 100%;
+  margin-top: 4px;
+}
+
+@keyframes form-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

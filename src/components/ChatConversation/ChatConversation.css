@@ -1,0 +1,13 @@
+/* Before the chat starts: the button sits centered in the card */
+.chat-start {
+  display: grid;
+  place-items: center;
+  min-height: 400px;
+}
+
+/* After it starts: messages stack with a gap between them */
+.chat-conversation {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}

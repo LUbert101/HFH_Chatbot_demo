@@ -1,0 +1,76 @@
+.prescreening {
+  min-height: 100vh;
+}
+
+/* ---------- Hero ---------- */
+.hero {
+  position: relative;
+  height: 560px;
+  background: var(--color-hero);
+}
+
+.hero-inner {
+  position: relative;
+  height: 100%;
+}
+
+.title-banner {
+  position: absolute;
+  left: 24px;
+  bottom: -90px;
+  width: min(900px, calc(100% - 48px));
+  padding: 28px 30px 110px;
+  background: var(--color-banner);
+  color: var(--color-text-inverse);
+  /* Pointed bottom edge */
+  clip-path: polygon(0 0, 100% 0, 100% 86%, 50% 100%, 0 86%);
+}
+
+.title-banner h1 {
+  margin: 0;
+  font-size: clamp(2.2rem, 5vw, 4.2rem);
+  line-height: 1.05;
+  font-weight: 800;
+}
+
+/* ---------- Content area ---------- */
+.content {
+  /* 90px clears the banner's overhang, the rest is breathing room */
+  padding: 130px 0 80px;
+}
+
+.card {
+  min-height: 640px;
+  padding: 32px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 40px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+/* Chat on the left, form on the right once the chatbot finishes */
+.card-with-form {
+  grid-template-columns: minmax(0, 1fr) 380px;
+}
+
+.form-panel {
+  padding-left: 40px;
+  border-left: 1px solid var(--color-border);
+}
+
+/* Stack the form under the chat on narrow screens */
+@media (max-width: 900px) {
+  .card-with-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .form-panel {
+    padding-left: 0;
+    padding-top: 32px;
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+  }
+}
