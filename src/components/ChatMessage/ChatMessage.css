@@ -1,3 +1,4 @@
+/* Message */
 .chat-message {
   display: flex;
   align-items: flex-start;
@@ -5,6 +6,7 @@
   max-width: 560px;
 }
 
+/* Avatar */
 .chat-avatar {
   flex: none;
   display: grid;
@@ -16,6 +18,12 @@
   color: var(--color-text-inverse);
 }
 
+.chat-avatar-spacer {
+  flex: none;
+  width: 40px;
+}
+
+/* Bubble */
 .chat-bubble {
   padding: 14px 18px;
   border-radius: 4px 18px 18px 18px;
@@ -26,7 +34,30 @@
   line-height: 1.45;
 }
 
-/* New messages fade and slide in */
+/* User */
+.chat-message-user {
+  align-self: flex-end;
+  margin: 8px 0;
+}
+
+.chat-bubble-user {
+  border-radius: 18px 4px 18px 18px;
+  background: var(--color-user-bubble);
+  color: var(--color-user-text);
+}
+
+/* Tones */
+.chat-bubble-warning {
+  background: var(--color-chat-yellow);
+  color: var(--color-text);
+}
+
+.chat-bubble-alert {
+  background: var(--color-chat-red);
+  color: var(--color-text-inverse);
+}
+
+/* Animation */
 .chat-message {
   animation: chat-pop 0.25s ease;
 }
@@ -42,7 +73,7 @@
   }
 }
 
-/* Typing indicator */
+/* Typing */
 .typing-dots {
   display: inline-flex;
   align-items: center;

@@ -1,13 +1,48 @@
-/* Before the chat starts: the button sits centered in the card */
+/* Start */
 .chat-start {
   display: grid;
   place-items: center;
   min-height: 400px;
 }
 
-/* After it starts: messages stack with a gap between them */
+/* Messages */
 .chat-conversation {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.chat-messages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 8px;
+  padding-bottom: calc(var(--dock-height, 0px) + 12px);
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+/* Dock */
+.chat-dock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 12px;
+  border-radius: var(--radius-lg);
+  background: transparent;
+}
+
+.chat-dock > .chat-choices,
+.chat-dock > .chat-text-input {
+  margin-top: 0;
+}
+
+.chat-dock > .chat-text-input {
+  width: 100%;
 }

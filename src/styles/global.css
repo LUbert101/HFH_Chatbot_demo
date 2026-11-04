@@ -1,4 +1,4 @@
-/* Global reset and shared layout. Imported once in main.tsx. */
+/* Reset */
 *,
 *::before,
 *::after {
@@ -13,6 +13,7 @@ body,
   padding: 0;
 }
 
+/* Body */
 body {
   background: var(--color-bg);
   color: var(--color-text);
@@ -20,6 +21,7 @@ body {
   color-scheme: light;
 }
 
+/* Container */
 .container {
   width: 100%;
   max-width: var(--container-max);

@@ -1,26 +1,27 @@
-/* Shared design tokens: change a color here and it updates everywhere. */
 :root {
-  /* Brand */
+  /* Colors */
   --color-hero: #2b6a9b;
   --color-banner: #4aabd6;
 
-  /* Buttons */
-  --color-primary: #4f46e5;
-  --color-primary-hover: #4338ca;
+  --color-primary: #4a9bd1;
+  --color-primary-hover: #3b86bb;
   --color-secondary: #e5e7eb;
   --color-secondary-hover: #d1d5db;
 
-  /* Chat */
   --color-chat: #4a9bd1;
+  --color-user-bubble: #e8eef4;
+  --color-user-text: #1e293b;
+  --color-chat-red: #e57373;
+  --color-chat-yellow: #f2c75c;
 
-  /* Page */
   --color-bg: #f2f2f2;
   --color-surface: #fff;
   --color-border: #e1e4e8;
+  --color-dock: rgba(0, 0, 0, 0.06);
   --color-text: #222;
   --color-text-inverse: #fff;
 
-  /* Type & layout */
+  /* Layout */
   --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
   --container-max: 1400px;
   --radius: 8px;

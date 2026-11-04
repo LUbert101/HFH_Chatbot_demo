@@ -1,41 +1,76 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Button from "../Button/Button";
-import ChatMessage from "../ChatMessage/ChatMessage";
+import ChatInputBar from "../ChatInputBar/ChatInputBar";
+import ChatMessage, { type ChatTone } from "../ChatMessage/ChatMessage";
 import TypingDots from "../ChatMessage/TypingDots";
 import "./ChatConversation.css";
 
+export type ChatLine = {
+  from: "bot" | "user";
+  text: string;
+  tone?: ChatTone;
+};
+
 type ChatConversationProps = {
-  /** The bot's messages, shown one after another. */
-  messages: string[];
-  /** How long the "typing" dots show before each message appears. */
+  lines: ChatLine[];
   typingDelayMs?: number;
-  /** Called once the last message has appeared. */
   onFinish?: () => void;
+  children?: ReactNode;
 };
 
 export default function ChatConversation({
-  messages,
-  typingDelayMs = 3000,
+  lines,
+  typingDelayMs = 2000,
   onFinish,
+  children,
 }: ChatConversationProps) {
+  // State
   const [started, setStarted] = useState(false);
   const [visibleCount, setVisibleCount] = useState(0);
 
-  // The bot is "typing" whenever the chat has started and messages remain.
-  const typing = started && visibleCount < messages.length;
+  // Typing
+  const pending = started && visibleCount < lines.length;
+  const typing = pending && lines[visibleCount].from === "bot";
 
   useEffect(() => {
-    if (!typing) return;
-    const timer = setTimeout(() => setVisibleCount((n) => n + 1), typingDelayMs);
+    if (!pending) return;
+    const delay = typing ? typingDelayMs : 0;
+    const timer = setTimeout(() => setVisibleCount((n) => n + 1), delay);
     return () => clearTimeout(timer);
-  }, [typing, visibleCount, typingDelayMs]);
+  }, [pending, typing, visibleCount, typingDelayMs]);
 
-  const finished = started && visibleCount >= messages.length;
+  // Finish
+  const finished = started && visibleCount >= lines.length;
 
   useEffect(() => {
     if (finished) onFinish?.();
   }, [finished, onFinish]);
 
+  // Scroll
+  const messagesRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = messagesRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [visibleCount, typing, finished]);
+
+  // Dock
+  const conversationRef = useRef<HTMLDivElement>(null);
+  const dockRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const dock = dockRef.current;
+    const box = conversationRef.current;
+    if (!dock || !box) return;
+    const update = () =>
+      box.style.setProperty("--dock-height", `${dock.offsetHeight}px`);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(dock);
+    return () => observer.disconnect();
+  }, [started]);
+
+  // Start
   if (!started) {
     return (
       <div className="chat-start">
@@ -44,16 +79,33 @@ export default function ChatConversation({
     );
   }
 
+  // Messages
+  const shown = lines.slice(0, visibleCount);
+  const lastIsBot = shown[shown.length - 1]?.from === "bot";
+
   return (
-    <div className="chat-conversation">
-      {messages.slice(0, visibleCount).map((text) => (
-        <ChatMessage key={text}>{text}</ChatMessage>
-      ))}
-      {typing && (
-        <ChatMessage>
-          <TypingDots />
-        </ChatMessage>
-      )}
+    <div className="chat-conversation" ref={conversationRef}>
+      <div className="chat-messages" ref={messagesRef}>
+        {shown.map((line, i) => (
+          <ChatMessage
+            key={i}
+            from={line.from}
+            tone={line.tone}
+            showAvatar={shown[i - 1]?.from !== "bot"}
+          >
+            {line.text}
+          </ChatMessage>
+        ))}
+        {typing && (
+          <ChatMessage showAvatar={!lastIsBot}>
+            <TypingDots />
+          </ChatMessage>
+        )}
+      </div>
+      <div className="chat-dock" ref={dockRef}>
+        {finished && children}
+        <ChatInputBar />
+      </div>
     </div>
   );
 }

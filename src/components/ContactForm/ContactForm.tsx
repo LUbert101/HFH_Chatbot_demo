@@ -6,13 +6,21 @@ export type ContactFormValues = Record<string, string>;
 
 type ContactFormProps = {
   onSubmit: (values: ContactFormValues) => void;
+  addressOptional?: boolean;
+  title?: string;
 };
 
+// States
 const STATES = [
   "IL"
 ];
 
-export default function ContactForm({ onSubmit }: ContactFormProps) {
+export default function ContactForm({
+  onSubmit,
+  addressOptional = false,
+  title = "Your information",
+}: ContactFormProps) {
+  // Submit
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const values = Object.fromEntries(
@@ -23,8 +31,9 @@ export default function ContactForm({ onSubmit }: ContactFormProps) {
 
   return (
     <form className="contact-form" onSubmit={handleSubmit}>
-      <h2>Your information</h2>
+      <h2>{title}</h2>
 
+      {/* Name */}
       <div className="field-row">
         <label className="field">
           First name
@@ -36,25 +45,34 @@ export default function ContactForm({ onSubmit }: ContactFormProps) {
         </label>
       </div>
 
+      {/* Phone */}
       <label className="field">
         Phone #
         <input name="phone" type="tel" autoComplete="tel" required />
       </label>
 
+      {/* Email */}
       <label className="field">
-        Address
-        <input name="address" type="text" autoComplete="street-address" required />
+        Email
+        <input name="email" type="email" autoComplete="email" required />
       </label>
 
+      {/* Address */}
+      <label className="field">
+        Address
+        <input name="address" type="text" autoComplete="street-address" required={!addressOptional} />
+      </label>
+
+      {/* Location */}
       <div className="field-row field-row-3">
         <label className="field">
           City
-          <input name="city" type="text" autoComplete="address-level2" required />
+          <input name="city" type="text" autoComplete="address-level2" required={!addressOptional} />
         </label>
         <label className="field">
           State
-          <select name="state" autoComplete="address-level1" defaultValue="" required>
-            <option value="" disabled>
+          <select name="state" autoComplete="address-level1" defaultValue="" required={!addressOptional}>
+            <option value="" disabled={!addressOptional}>
               --
             </option>
             {STATES.map((abbr) => (
@@ -73,11 +91,12 @@ export default function ContactForm({ onSubmit }: ContactFormProps) {
             pattern="[0-9]{5}"
             maxLength={5}
             autoComplete="postal-code"
-            required
+            required={!addressOptional}
           />
         </label>
       </div>
 
+      {/* Button */}
       <Button type="submit">Submit</Button>
     </form>
   );

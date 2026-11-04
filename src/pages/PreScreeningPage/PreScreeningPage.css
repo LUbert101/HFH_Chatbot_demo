@@ -1,8 +1,9 @@
+/* Page */
 .prescreening {
   min-height: 100vh;
 }
 
-/* ---------- Hero ---------- */
+/* Banner */
 .hero {
   position: relative;
   height: 560px;
@@ -22,7 +23,6 @@
   padding: 28px 30px 110px;
   background: var(--color-banner);
   color: var(--color-text-inverse);
-  /* Pointed bottom edge */
   clip-path: polygon(0 0, 100% 0, 100% 86%, 50% 100%, 0 86%);
 }
 
@@ -33,17 +33,18 @@
   font-weight: 800;
 }
 
-/* ---------- Content area ---------- */
+/* Content */
 .content {
-  /* 90px clears the banner's overhang, the rest is breathing room */
   padding: 130px 0 80px;
 }
 
+/* Card */
 .card {
-  min-height: 640px;
+  height: 640px;
   padding: 32px;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   gap: 40px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -51,7 +52,7 @@
   box-shadow: var(--shadow-card);
 }
 
-/* Chat on the left, form on the right once the chatbot finishes */
+/* Form */
 .card-with-form {
   grid-template-columns: minmax(0, 1fr) 380px;
 }
@@ -59,10 +60,33 @@
 .form-panel {
   padding-left: 40px;
   border-left: 1px solid var(--color-border);
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
-/* Stack the form under the chat on narrow screens */
+/* Summary */
+.summary-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* Mobile */
 @media (max-width: 900px) {
+  .card {
+    height: auto;
+    grid-template-rows: none;
+  }
+
+  .card .chat-conversation {
+    height: 520px;
+  }
+
+  .form-panel {
+    overflow-y: visible;
+  }
+
   .card-with-form {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -73,4 +97,25 @@
     border-left: none;
     border-top: 1px solid var(--color-border);
   }
+}
+
+/* Answer */
+.chat-answer {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.chat-answer .chat-choices {
+  flex: none;
+  align-self: flex-end;
+  margin-top: 0;
+}
+
+.chat-answer .chat-text-input {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  align-self: flex-start;
+  margin: 0;
 }
