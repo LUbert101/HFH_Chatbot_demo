@@ -17,7 +17,7 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding-right: 8px;
+  padding-right: 16px;
   padding-bottom: calc(var(--dock-height, 0px) + 12px);
   display: flex;
   flex-direction: column;
@@ -33,7 +33,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 12px;
+  padding: 12px 36px 12px 12px;
   border-radius: var(--radius-lg);
   background: transparent;
 }

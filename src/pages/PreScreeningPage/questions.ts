@@ -1,4 +1,5 @@
 import type { ChatTone } from "../../components/ChatMessage/ChatMessage";
+import type { HouseholdQuestions } from "../../components/HouseholdForm/HouseholdForm";
 import type { RequirementQuestion } from "../../components/RequirementsForm/RequirementsForm";
 
 // Types
@@ -30,7 +31,8 @@ export type Step =
       showContact?: boolean;
     })
   | (StepBase & { type: "form"; next: string | null; title?: string })
-  | (StepBase & { type: "requirements"; next: string | null });
+  | (StepBase & { type: "requirements"; next: string | null })
+  | (StepBase & { type: "household"; next: string | null });
 
 // Flow
 export const firstStepId = "housing";
@@ -39,11 +41,29 @@ export const closingMessage = "END OF DEMO";
 // Contact
 export const contactLabel = "Contact information";
 export const contactMessage =
-  "You can reach Habitat for Humanity Greater Peoria Area at (309) 676-6729.";
+  "You can reach Habitat for Humanity Greater Peoria Area at: \n - (309) 676-6729 \n - 931 N Douglas, Peoria, IL 61606 \n - info@habitatpeoria.org";
+
+// Clarify
+export const clarifyLabel = "Clarify";
+
+export type Clarification = {
+  label: string;
+  message?: string;
+};
+
+export const clarifications: Clarification[] = [
+  {
+    label: "Sweat Equity",
+    message:
+      "Sweat Equity - Completing at least 250 hours of sweat equity per adult (age 18+), this includes volunteering on build sites, in the office or ReStore, or other approved tasks",
+  },
+  { label: "Workshops" },
+  { label: "Partner" },
+];
 
 // Disclaimer
-const disclaimer =
-  "Chatbot only collects information and does NOT make approval decisions. Please take any questions/concerns with Habitat for Humanity.";
+export const disclaimer =
+  "Chatbot only collects information and does NOT make approval decisions. For any questions or concerns, please contact Habitat for Humanity Greater Peoria Area.";
 
 // Steps
 export const steps: Step[] = [
@@ -61,8 +81,7 @@ export const steps: Step[] = [
   {
     id: "housingDetails",
     type: "text",
-    intro: [{ text: disclaimer, tone: "warning" }],
-    text: "Can you tell us a little about your situation? Share as much or as little as you'd like.",
+    text: "Can you tell us a little about your situation? Share as much as you can.",
     placeholder: "Tell us about your situation...",
     multiline: true,
     showContact: true,
@@ -87,7 +106,13 @@ export const steps: Step[] = [
   {
     id: "requirements",
     type: "requirements",
-    text: "Last up are the program requirements. Please answer each question in the form on the right.",
+    text: "Next are the program requirements. Please answer each question in the form on the right.",
+    next: "household",
+  },
+  {
+    id: "household",
+    type: "household",
+    text: "Last up is housing information. Please fill out the form on the right.",
     next: null,
   },
 ];
@@ -124,4 +149,35 @@ export const requirementQuestions: RequirementQuestion[] = [
     text: "Are you a U.S. citizen or permanent resident?",
     note: "Disclaimer: Must be a U.S. citizen or permanent resident or your application may be affected",
   },
+];
+
+// Household
+export const householdQuestions: HouseholdQuestions = {
+  residency: {
+    text: "Please state the current length of residency in the greater Peoria area:",
+    note: "Disclaimer: Must be from greater Peoria area or your application may be affected",
+  },
+  adults: {
+    text: "Please state the first and last name, as well as age of all adults in the household (not including yourself).",
+    hint: "Use the \"+\" to add more information as needed.",
+  },
+  children: {
+    text: "Please state the first and last name, as well as age of all children in the household.",
+    hint: "Use the \"+\" to add more information as needed.",
+  },
+  taxes: {
+    text: "Are all children listed claimed on your income tax?",
+    hint: "Please note that children who are not claimed in your tax return are not a part of the household and should not be considered in the previous question.",
+  },
+  income: {
+    text: "Please provide the average income of the household, ensuring that you list any other sources of income:",
+  },
+};
+
+export const householdLabels = [
+  { id: "residency", label: "Peoria residency" },
+  { id: "adults", label: "Adults" },
+  { id: "children", label: "Children" },
+  { id: "taxes", label: "Claimed on taxes" },
+  { id: "income", label: "Household income" },
 ];

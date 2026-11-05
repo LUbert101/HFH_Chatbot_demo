@@ -1,9 +1,11 @@
 import type { ContactFormValues } from "../ContactForm/ContactForm";
+import EditButton from "../EditButton/EditButton";
 import "./ContactSummary.css";
 
 type ContactSummaryProps = {
   values: ContactFormValues | "N/A";
   title?: string;
+  onEdit?: () => void;
 };
 
 function buildRows(values: ContactFormValues) {
@@ -22,6 +24,7 @@ function buildRows(values: ContactFormValues) {
 export default function ContactSummary({
   values,
   title = "Your information",
+  onEdit,
 }: ContactSummaryProps) {
   const notApplicable = values === "N/A";
   const rows = notApplicable
@@ -36,7 +39,10 @@ export default function ContactSummary({
 
   return (
     <div className="contact-summary">
-      <h2>{title}</h2>
+      <div className="summary-header">
+        <h2>{title}</h2>
+        {onEdit && <EditButton label={title} onClick={onEdit} />}
+      </div>
       {rows.map(([label, value]) => (
         <div className="summary-row" key={label}>
           <span className="summary-label">{label}</span>

@@ -32,6 +32,7 @@
   font-size: 1.05rem;
   font-weight: 500;
   line-height: 1.45;
+  white-space: pre-line;
 }
 
 /* User */
@@ -55,6 +56,28 @@
 .chat-bubble-alert {
   background: var(--color-chat-red);
   color: var(--color-text-inverse);
+}
+
+.chat-bubble-success {
+  box-shadow: inset 4px 0 0 var(--color-success);
+}
+
+.chat-bubble-clickable {
+  border: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.chat-bubble-clickable:hover {
+  background: #d9e3ee;
+}
+
+.chat-bubble-clickable::after {
+  content: "\270E";
+  margin-left: 10px;
+  opacity: 0.6;
 }
 
 /* Animation */

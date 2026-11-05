@@ -20,6 +20,11 @@
   --color-dock: rgba(0, 0, 0, 0.06);
   --color-text: #222;
   --color-text-inverse: #fff;
+  --color-required: #d64545;
+  --color-success: #3f9d5a;
+  --color-success-hover: #348a4d;
+  --color-disabled: #d1d5db;
+  --color-disabled-text: #6b7280;
 
   /* Layout */
   --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;

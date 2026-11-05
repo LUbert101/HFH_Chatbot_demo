@@ -9,12 +9,17 @@ export type ChatLine = {
   from: "bot" | "user";
   text: string;
   tone?: ChatTone;
+  editKey?: string;
 };
 
 type ChatConversationProps = {
   lines: ChatLine[];
   typingDelayMs?: number;
   onFinish?: () => void;
+  inputEnabled?: boolean;
+  inputPlaceholder?: string;
+  onSend?: (text: string) => void;
+  onLineClick?: (key: string) => void;
   children?: ReactNode;
 };
 
@@ -22,6 +27,10 @@ export default function ChatConversation({
   lines,
   typingDelayMs = 2000,
   onFinish,
+  inputEnabled = false,
+  inputPlaceholder,
+  onSend,
+  onLineClick,
   children,
 }: ChatConversationProps) {
   // State
@@ -86,16 +95,20 @@ export default function ChatConversation({
   return (
     <div className="chat-conversation" ref={conversationRef}>
       <div className="chat-messages" ref={messagesRef}>
-        {shown.map((line, i) => (
-          <ChatMessage
-            key={i}
-            from={line.from}
-            tone={line.tone}
-            showAvatar={shown[i - 1]?.from !== "bot"}
-          >
-            {line.text}
-          </ChatMessage>
-        ))}
+        {shown.map((line, i) => {
+          const key = line.editKey;
+          return (
+            <ChatMessage
+              key={i}
+              from={line.from}
+              tone={line.tone}
+              showAvatar={shown[i - 1]?.from !== "bot"}
+              onClick={key && onLineClick ? () => onLineClick(key) : undefined}
+            >
+              {line.text}
+            </ChatMessage>
+          );
+        })}
         {typing && (
           <ChatMessage showAvatar={!lastIsBot}>
             <TypingDots />
@@ -104,7 +117,11 @@ export default function ChatConversation({
       </div>
       <div className="chat-dock" ref={dockRef}>
         {finished && children}
-        <ChatInputBar />
+        <ChatInputBar
+          disabled={!(finished && inputEnabled)}
+          placeholder={inputPlaceholder}
+          onSend={onSend}
+        />
       </div>
     </div>
   );

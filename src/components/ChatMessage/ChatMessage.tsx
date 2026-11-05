@@ -1,13 +1,14 @@
 import type { ReactNode } from "react";
 import "./ChatMessage.css";
 
-export type ChatTone = "warning" | "alert";
+export type ChatTone = "warning" | "alert" | "success";
 
 type ChatMessageProps = {
   children: ReactNode;
   showAvatar?: boolean;
   from?: "bot" | "user";
   tone?: ChatTone;
+  onClick?: () => void;
 };
 
 /** round icon on the left, speech bubble on the right. */
@@ -16,11 +17,26 @@ export default function ChatMessage({
   showAvatar = true,
   from = "bot",
   tone,
+  onClick,
 }: ChatMessageProps) {
   if (from === "user") {
+    const bubbleClass = tone
+      ? `chat-bubble chat-bubble-user chat-bubble-${tone}`
+      : "chat-bubble chat-bubble-user";
     return (
       <div className="chat-message chat-message-user">
-        <div className="chat-bubble chat-bubble-user">{children}</div>
+        {onClick ? (
+          <button
+            type="button"
+            className={`${bubbleClass} chat-bubble-clickable`}
+            title="Click to edit"
+            onClick={onClick}
+          >
+            {children}
+          </button>
+        ) : (
+          <div className={bubbleClass}>{children}</div>
+        )}
       </div>
     );
   }

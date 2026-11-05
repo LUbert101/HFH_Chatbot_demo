@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import Button from "../Button/Button";
+import FieldMark, { RequiredKey } from "../FieldMark/FieldMark";
 import "../ContactForm/ContactForm.css";
 import "./RequirementsForm.css";
 
@@ -15,6 +16,7 @@ type RequirementsFormProps = {
   questions: RequirementQuestion[];
   onSubmit: (values: Record<string, string>) => void;
   title?: string;
+  initialValues?: Record<string, string>;
 };
 
 // Options
@@ -24,10 +26,24 @@ export default function RequirementsForm({
   questions,
   onSubmit,
   title = "Program requirements",
+  initialValues,
 }: RequirementsFormProps) {
   // State
-  const [choices, setChoices] = useState<Record<string, string>>({});
-  const [reasons, setReasons] = useState<Record<string, string>>({});
+  const [choices, setChoices] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      Object.entries(initialValues ?? {}).map(([id, value]) => [
+        id,
+        value.startsWith("Other: ") ? "Other" : value,
+      ])
+    )
+  );
+  const [reasons, setReasons] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      Object.entries(initialValues ?? {})
+        .filter(([, value]) => value.startsWith("Other: "))
+        .map(([id, value]) => [id, value.slice("Other: ".length)])
+    )
+  );
 
   const complete = questions.every((q) => {
     const choice = choices[q.id];
@@ -58,11 +74,12 @@ export default function RequirementsForm({
   return (
     <form className="contact-form" onSubmit={handleSubmit}>
       <h2>{title}</h2>
+      <RequiredKey />
 
       {questions.map((q, i) => (
         <fieldset className="requirement" key={q.id}>
           <legend>
-            {i + 1}. {q.text}
+            {i + 1}. {q.text} <FieldMark />
           </legend>
 
           {/* Options */}
@@ -98,7 +115,7 @@ export default function RequirementsForm({
       ))}
 
       {/* Button */}
-      <Button type="submit" disabled={!complete}>
+      <Button type="submit" variant="success" disabled={!complete}>
         Submit
       </Button>
     </form>

@@ -5,8 +5,16 @@
   animation: summary-fade-in 0.4s ease;
 }
 
+.summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
 .contact-summary h2 {
-  margin: 0 0 8px;
+  margin: 0;
   font-size: 1.25rem;
 }
 
