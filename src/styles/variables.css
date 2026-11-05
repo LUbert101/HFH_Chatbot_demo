@@ -1,0 +1,35 @@
+:root {
+  /* Colors */
+  --color-hero: #2b6a9b;
+  --color-banner: #4aabd6;
+
+  --color-primary: #4a9bd1;
+  --color-primary-hover: #3b86bb;
+  --color-secondary: #e5e7eb;
+  --color-secondary-hover: #d1d5db;
+
+  --color-chat: #4a9bd1;
+  --color-user-bubble: #e8eef4;
+  --color-user-text: #1e293b;
+  --color-chat-red: #e57373;
+  --color-chat-yellow: #f2c75c;
+
+  --color-bg: #f2f2f2;
+  --color-surface: #fff;
+  --color-border: #e1e4e8;
+  --color-dock: rgba(0, 0, 0, 0.06);
+  --color-text: #222;
+  --color-text-inverse: #fff;
+  --color-required: #d64545;
+  --color-success: #3f9d5a;
+  --color-success-hover: #348a4d;
+  --color-disabled: #d1d5db;
+  --color-disabled-text: #6b7280;
+
+  /* Layout */
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --container-max: 1400px;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.08);
+}

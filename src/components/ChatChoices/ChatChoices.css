@@ -1,0 +1,9 @@
+/* Choices */
+.chat-choices {
+  align-self: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+}

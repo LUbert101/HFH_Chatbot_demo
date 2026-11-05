@@ -1,0 +1,18 @@
+/* Edit */
+.edit-button {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-secondary);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.edit-button:hover {
+  background: var(--color-secondary-hover);
+}

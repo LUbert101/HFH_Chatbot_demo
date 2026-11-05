@@ -1,0 +1,12 @@
+/* Required */
+.required-mark {
+  color: var(--color-required);
+  font-weight: 700;
+}
+
+/* Key */
+.required-key {
+  margin: -8px 0 0;
+  color: #666;
+  font-size: 0.8rem;
+}
