@@ -3,6 +3,10 @@ from docx import Document
 import os
 from flask_cors import CORS
 
+# Path to the output Word document.
+file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'output.docx')
+
+# Flask application setup for handling pre-screening form submissions and saving to a Word document.
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:5174"])
 file_path = os.path.join(
@@ -10,6 +14,7 @@ file_path = os.path.join(
     "output.docx",
 )
 
+# Route to receive pre-screening form data and save it to a Word document.
 @app.post("/prescreening")
 def receive_prescreening():
     data = request.get_json()
@@ -39,10 +44,6 @@ def receive_prescreening():
     doc.save(file_path)
     return jsonify({"saved": True, "file": "output.docx"})
 
-if __name__ == "__main__":
-    app.run(port=8000)
-
-file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'output.docx')
-
+# Start the Flask application when the script is run directly.
 if __name__ == "__main__":
     app.run(port=8000)

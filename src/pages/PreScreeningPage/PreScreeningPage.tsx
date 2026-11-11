@@ -78,6 +78,7 @@ export default function PreScreeningPage() {
 
   const step = steps.find((s) => s.id === stepId);
 
+  // Send pre-screening data to the Python server.
   async function sendToPython(data: {
   applicant: ContactFormValues | null;
   answers: Record<string, string>;
@@ -94,6 +95,7 @@ export default function PreScreeningPage() {
   if (!response.ok) {
     throw new Error(`Python server returned ${response.status}`);
   }
+  // Log the saved file path.
   const result = await response.json();
   console.log(`Saved to ${result.file}`);
 }
@@ -123,12 +125,14 @@ export default function PreScreeningPage() {
     ]);
   }
 
+  // Handle spouse form submission.
   function handleSpouse(values: ContactFormValues) {
     if (step?.type !== "form") return;
     setSpouse(values);
     goTo(step.next, [submitted("Spouse or partner information", "spouse")]);
   }
 
+  // Handle household form submission.
   async function handleHousehold(
   values: Record<string, string>,
   draft: HouseholdDraft
@@ -138,6 +142,7 @@ export default function PreScreeningPage() {
   setHousehold(values);
   setHouseholdDraft(draft);
 
+  // Send the pre-screening data to the Python server.
  try {
   await sendToPython({
     applicant,
