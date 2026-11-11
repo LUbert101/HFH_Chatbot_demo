@@ -78,6 +78,28 @@ export default function PreScreeningPage() {
 
   const step = steps.find((s) => s.id === stepId);
 
+  // Send pre-screening data to the Python server.
+  async function sendToPython(data: {
+  applicant: ContactFormValues | null;
+  answers: Record<string, string>;
+  spouse: ContactFormValues | "N/A" | null;
+  requirements: Record<string, string> | null;
+  household: Record<string, string>;
+}) {
+  const response = await fetch("http://localhost:8000/prescreening", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Python server returned ${response.status}`);
+  }
+  // Log the saved file path.
+  const result = await response.json();
+  console.log(`Saved to ${result.file}`);
+}
+
   // Questions
   function goTo(nextId: string | null, before: ChatLine[]) {
     const next = steps.find((s) => s.id === nextId);
@@ -103,26 +125,42 @@ export default function PreScreeningPage() {
     ]);
   }
 
+  // Handle spouse form submission.
   function handleSpouse(values: ContactFormValues) {
     if (step?.type !== "form") return;
     setSpouse(values);
     goTo(step.next, [submitted("Spouse or partner information", "spouse")]);
   }
 
-  function handleHousehold(values: Record<string, string>, draft: HouseholdDraft) {
-    if (step?.type !== "household") return;
-    setHousehold(values);
-    setHouseholdDraft(draft);
-    console.log({
-      applicant,
-      answers,
-      spouse: answers.spouse === "No" ? "N/A" : spouse,
-      requirements,
-      household: values,
-    });
-    goTo(step.next, [submitted("Housing information", "household")]);
-  }
+  // Handle household form submission.
+  async function handleHousehold(
+  values: Record<string, string>,
+  draft: HouseholdDraft
+) {
+  if (step?.type !== "household") return;
 
+  setHousehold(values);
+  setHouseholdDraft(draft);
+
+  // Send the pre-screening data to the Python server.
+ try {
+  await sendToPython({
+    applicant,
+    answers,
+    spouse: answers.spouse === "No" ? "N/A" : spouse,
+    requirements,
+    household: values,
+  });
+} catch (error) {
+  setLines((current) => [
+    ...current,
+    bot(error instanceof Error ? error.message : "Could not send application."),
+  ]);
+  return;
+}
+
+  goTo(step.next, [submitted("Housing information", "household")]);
+}
   // Edit
   function startEdit(section: Section) {
     setEditing(section);
