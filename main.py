@@ -1,31 +1,48 @@
+from flask import Flask, request, jsonify, send_file
 from docx import Document
 import os
-from chatbot import start_chat
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app, origins=["http://localhost:5174"])
+file_path = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "output.docx",
+)
+
+@app.post("/prescreening")
+def receive_prescreening():
+    data = request.get_json()
+    if not isinstance(data, dict):
+        return jsonify({"error": "Expected JSON data"}), 400
+
+    doc = Document(file_path) if os.path.exists(file_path) else Document()
+
+    for key, title in [
+        ("applicant", "Applicant"),
+        ("answers", "Answers"),
+        ("spouse", "Spouse or partner"),
+        ("requirements", "Program requirements"),
+        ("household", "Housing information"),
+    ]:
+        section = data.get(key)
+        if section is None:
+            continue
+
+        doc.add_heading(title, level=2)
+        if isinstance(section, dict):
+            for field, value in section.items():
+                doc.add_paragraph(f"{field}: {value}")
+        else:
+            doc.add_paragraph(str(section))
+
+    doc.save(file_path)
+    return jsonify({"saved": True, "file": "output.docx"})
+
+if __name__ == "__main__":
+    app.run(port=8000)
 
 file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'output.docx')
 
-def add_info(doc, first_name, last_name):
-    doc.add_heading(f'{first_name} {last_name}', level=2)
-
-def main():
-    print("Welcome to the Master Control Program.")
-    print("Initializing systems...")
-    print("-" * 30)
-
-    if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-        doc = Document(file_path)
-    else:
-        if os.path.exists(file_path):
-            print('File is empty. Creating a new document.')
-        else:
-            print('File does not exist. Creating a new document.')
-        doc = Document()
-
-    first_name, last_name = start_chat()
-    add_info(doc, first_name, last_name)
-    doc.save(file_path)
-
-    print("\nSystem returning to standby mode.")
-
 if __name__ == "__main__":
-    main()
+    app.run(port=8000)
