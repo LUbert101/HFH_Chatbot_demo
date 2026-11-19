@@ -1,6 +1,4 @@
 import { useState } from "react";
-import AnswerForm from "../../components/AnswerForm/AnswerForm";
-import AnswerSummary from "../../components/AnswerSummary/AnswerSummary";
 import Button from "../../components/Button/Button";
 import ChatChoices from "../../components/ChatChoices/ChatChoices";
 import ChatConversation, {
@@ -19,8 +17,6 @@ import {
   clarifications,
   clarifyLabel,
   closingMessage,
-  contactLabel,
-  contactMessage,
   disclaimer,
   firstStepId,
   householdLabels,
@@ -33,7 +29,7 @@ import "./PreScreeningPage.css";
 
 type Stage = "intro" | "form" | "summary";
 
-type Section = "applicant" | "housing" | "spouse" | "requirements" | "household";
+type Section = "applicant" | "spouse" | "requirements" | "household";
 
 const unstableLabel = "I have unstable housing / other";
 
@@ -46,7 +42,6 @@ function submitted(text: string, section: Section): ChatLine {
   return { from: "user", text, tone: "success", editKey: section };
 }
 
-const housingQuestion = steps.find((s) => s.id === "housingDetails")?.text;
 
 const openingLines: ChatLine[] = [
   bot(
@@ -65,8 +60,6 @@ export default function PreScreeningPage() {
   const [applicant, setApplicant] = useState<ContactFormValues | null>(null);
   const [stepId, setStepId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [unstable, setUnstable] = useState(false);
-  const [contactShown, setContactShown] = useState(false);
   const [spouse, setSpouse] = useState<ContactFormValues | null>(null);
   const [household, setHousehold] = useState<Record<string, string> | null>(null);
   const [householdDraft, setHouseholdDraft] = useState<HouseholdDraft | null>(null);
@@ -97,7 +90,7 @@ export default function PreScreeningPage() {
     console.log(values);
     setApplicant(values);
     setStage("summary");
-    goTo(unstable ? "housingDetails" : firstStepId, [
+    goTo(firstStepId, [
       submitted("Personal information", "applicant"),
       bot(`Thanks, ${values.firstName}!`),
     ]);
@@ -113,13 +106,11 @@ export default function PreScreeningPage() {
     if (step?.type !== "household") return;
     setHousehold(values);
     setHouseholdDraft(draft);
-    console.log({
-      applicant,
-      answers,
-      spouse: answers.spouse === "No" ? "N/A" : spouse,
-      requirements,
-      household: values,
-    });
+    fetch("http://localhost:5000/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ applicant }),
+    }).catch((error) => console.warn("Could not reach the server", error));
     goTo(step.next, [submitted("Housing information", "household")]);
   }
 
@@ -145,11 +136,6 @@ export default function PreScreeningPage() {
     finishEdit("Personal information", "applicant");
   }
 
-  function handleEditHousing(text: string) {
-    setAnswers((current) => ({ ...current, housingDetails: text }));
-    finishEdit("Unstable housing", "housing");
-  }
-
   function handleEditSpouse(values: ContactFormValues) {
     setSpouse(values);
     finishEdit("Spouse or partner information", "spouse");
@@ -172,18 +158,6 @@ export default function PreScreeningPage() {
     goTo(step.next, [submitted("Program requirements", "requirements")]);
   }
 
-  function handleUnstable() {
-    setUnstable(true);
-    setAnswers((current) => ({ ...current, housing: unstableLabel }));
-    setLines((current) => [
-      ...current,
-      { from: "user", text: unstableLabel },
-      bot(
-        "No problem. You can leave the address blank, and I'll ask about your situation after you submit."
-      ),
-    ]);
-  }
-
   function handleClarify(item: Clarification) {
     const message = item.message;
     if (!message) return;
@@ -192,15 +166,6 @@ export default function PreScreeningPage() {
       ...current,
       { from: "user", text: item.label },
       bot(message),
-    ]);
-  }
-
-  function handleContact() {
-    setContactShown(true);
-    setLines((current) => [
-      ...current,
-      { from: "user", text: contactLabel },
-      bot(contactMessage),
     ]);
   }
 
@@ -250,8 +215,12 @@ export default function PreScreeningPage() {
               }}
               onLineClick={(key) => startEdit(key as Section)}
             >
-              {stage === "form" && !unstable && (
-                <ChatChoices options={[unstableLabel]} onPick={handleUnstable} />
+              {stage === "form" && (
+                <ChatChoices
+                  options={[unstableLabel]}
+                  disabled={[unstableLabel]}
+                  onPick={() => {}}
+                />
               )}
               {step?.type === "choice" && (
                 <ChatChoices
@@ -274,9 +243,6 @@ export default function PreScreeningPage() {
                     onPick={(i) => handleClarify(clarifyOptions[i])}
                   />
                 </div>
-              )}
-              {step?.type === "text" && step.showContact && !contactShown && (
-                <ChatChoices options={[contactLabel]} onPick={handleContact} />
               )}
             </ChatConversation>
 
@@ -306,37 +272,14 @@ export default function PreScreeningPage() {
                   </button>
                 </div>
                 {stage === "form" ? (
-                  <>
-                    <ContactForm onSubmit={handleForm} addressOptional={unstable} />
-                    {expanded && !unstable && (
-                      <div className="panel-unstable">
-                        <ChatChoices options={[unstableLabel]} onPick={handleUnstable} />
-                      </div>
-                    )}
-                  </>
+                  <ContactForm onSubmit={handleForm} />
                 ) : editing === "applicant" && applicant ? (
                   <>
                     <ContactForm
                       key="edit-applicant"
                       title="Edit your information"
                       initialValues={applicant}
-                      addressOptional={unstable}
                       onSubmit={handleEditApplicant}
-                    />
-                    <div className="edit-cancel">
-                      <Button variant="secondary" onClick={cancelEdit}>
-                        Cancel
-                      </Button>
-                    </div>
-                  </>
-                ) : editing === "housing" && answers.housingDetails ? (
-                  <>
-                    <AnswerForm
-                      key="edit-housing"
-                      title="Edit unstable housing"
-                      question={housingQuestion}
-                      initialValue={answers.housingDetails}
-                      onSubmit={handleEditHousing}
                     />
                     <div className="edit-cancel">
                       <Button variant="secondary" onClick={cancelEdit}>
@@ -350,7 +293,6 @@ export default function PreScreeningPage() {
                       key="edit-spouse"
                       title="Edit spouse or partner information"
                       initialValues={spouse}
-                      addressOptional={unstable}
                       onSubmit={handleEditSpouse}
                     />
                     <div className="edit-cancel">
@@ -393,7 +335,6 @@ export default function PreScreeningPage() {
                   <ContactForm
                     key={step.id}
                     title={step.title}
-                    addressOptional={unstable}
                     onSubmit={handleSpouse}
                   />
                 ) : step?.type === "household" ? (
@@ -414,13 +355,6 @@ export default function PreScreeningPage() {
                       values={applicant}
                       onEdit={() => startEdit("applicant")}
                     />
-                    {answers.housingDetails && (
-                      <AnswerSummary
-                        title="Unstable housing"
-                        answer={answers.housingDetails}
-                        onEdit={() => startEdit("housing")}
-                      />
-                    )}
                     {(spouse || answers.spouse === "No") && (
                       <ContactSummary
                         title="Spouse or partner"

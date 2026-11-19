@@ -28,7 +28,6 @@ export type Step =
       placeholder?: string;
       optional?: boolean;
       multiline?: boolean;
-      showContact?: boolean;
     })
   | (StepBase & { type: "form"; next: string | null; title?: string })
   | (StepBase & { type: "requirements"; next: string | null })
@@ -37,11 +36,6 @@ export type Step =
 // Flow
 export const firstStepId = "housing";
 export const closingMessage = "END OF DEMO";
-
-// Contact
-export const contactLabel = "Contact information";
-export const contactMessage =
-  "You can reach Habitat for Humanity Greater Peoria Area at: \n - (309) 676-6729 \n - 931 N Douglas, Peoria, IL 61606 \n - info@habitatpeoria.org";
 
 // Clarify
 export const clarifyLabel = "Clarify";
@@ -75,17 +69,7 @@ export const steps: Step[] = [
       { label: "Own my home", next: "spouse" },
       { label: "Rent", next: "spouse" },
       { label: "Live with family or friends", next: "spouse" },
-      { label: "Unstable housing", next: "housingDetails", reply: "Thanks for sharing that." },
     ],
-  },
-  {
-    id: "housingDetails",
-    type: "text",
-    text: "Can you tell us a little about your situation? Share as much as you can.",
-    placeholder: "Tell us about your situation...",
-    multiline: true,
-    showContact: true,
-    next: "spouse",
   },
   {
     id: "spouse",

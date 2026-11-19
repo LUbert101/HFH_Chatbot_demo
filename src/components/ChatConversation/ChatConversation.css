@@ -17,6 +17,8 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #c4c8cf transparent;
   padding-right: 16px;
   padding-bottom: calc(var(--dock-height, 0px) + 12px);
   display: flex;
