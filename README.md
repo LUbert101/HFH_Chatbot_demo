@@ -1,15 +1,18 @@
 # HFH_Chatbot_demo
 
-#To run back end 
-    #py main.py
-#next run the frontend
-    #npm run dev
+- To run back end: `py main.py`
+- Next, run the frontend: `npm run dev`
+
 ## File Directory
+
 ```
 main/
 ├ __pycache__/                       # Raw compiled Python from chatbot.py and main.py 
 | ├ chatbot.cpython-314.pyc
 | └ main.cpython-314.pyc
+├ backend/
+| ├ main.py                          # Prototype of running chatbot and saving info to output.docx
+| └ output.docx                      # Exported info from chatbot conversation, ideally to be converted into standard Habitat Peoria pre-app. format
 ├ public/
 | └ favicon.svg
 ├ src/                               # TypeScript (.tsx) and CSS files
@@ -59,9 +62,7 @@ main/
 ├ README.md                          # This file
 ├ chatbot.py                         # Python to run chatbot with decision tree and logic given user name and inputs
 ├ eslint.config.js
-├ index.html                         # Highest-level HTML file to render, displaying header info and calling /src/main.tsx
-├ main.py                            # Prototype of running chatbot and saving info to output.docx
-├ output.docx                        # Exported info from chatbot conversation, ideally to be converted into standard Habitat Peoria pre-app. format
+├ index.html
 ├ package-lock.json
 ├ package.json
 ├ tsconfig.app.json
