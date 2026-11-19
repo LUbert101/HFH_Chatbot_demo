@@ -87,7 +87,7 @@ export default function RequirementsForm({
             {(q.allowOther ? OPTIONS : OPTIONS.slice(0, 2)).map((option) => (
               <label className="requirement-option" key={option}>
                 <input
-                  type="checkbox"
+                  type="radio"
                   checked={choices[q.id] === option}
                   onChange={() => pick(q.id, option)}
                 />

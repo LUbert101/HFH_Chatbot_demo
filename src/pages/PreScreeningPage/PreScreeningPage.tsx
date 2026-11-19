@@ -1,0 +1,502 @@
+import { useState } from "react";
+import Button from "../../components/Button/Button";
+import ChatChoices from "../../components/ChatChoices/ChatChoices";
+import ChatConversation, {
+  type ChatLine,
+} from "../../components/ChatConversation/ChatConversation";
+import AnswerSummary from "../../components/AnswerSummary/AnswerSummary";
+import ConditionsForm, {
+  type ConditionsDraft,
+} from "../../components/ConditionsForm/ConditionsForm";
+import ContactForm, {
+  type ContactFormValues,
+} from "../../components/ContactForm/ContactForm";
+import ContactSummary from "../../components/ContactSummary/ContactSummary";
+import FinancialsForm, {
+  type FinancialsDraft,
+} from "../../components/FinancialsForm/FinancialsForm";
+import HouseholdForm, {
+  type HouseholdDraft,
+} from "../../components/HouseholdForm/HouseholdForm";
+import RequirementsForm from "../../components/RequirementsForm/RequirementsForm";
+import RequirementsSummary from "../../components/RequirementsSummary/RequirementsSummary";
+import {
+  clarifications,
+  clarifyLabel,
+  closingMessages,
+  conditionOptions,
+  financialLabels,
+  disclaimer,
+  firstStepId,
+  householdLabels,
+  householdQuestions,
+  requirementQuestions,
+  steps,
+} from "./questions";
+import type { Clarification } from "./questions";
+import "./PreScreeningPage.css";
+
+type Stage = "intro" | "form" | "summary";
+
+type Section = "applicant" | "conditions" | "financials" | "spouse" | "requirements" | "household";
+
+// Messages
+function bot(text: string): ChatLine {
+  return { from: "bot", text };
+}
+
+function submitted(text: string, section: Section): ChatLine {
+  return { from: "user", text, tone: "success", editKey: section };
+}
+
+const openingLines: ChatLine[] = [
+  bot(
+    "Hi, I'm the Habitat for Humanity chatbot, and I'll be here to assist you with your Pre-Screening application."
+  ),
+  { from: "bot", text: disclaimer, tone: "warning" },
+  bot(
+    "Lets get to know you! Go ahead and fill out form with your name, address, phone # and email!"
+  ),
+];
+
+export default function PreScreeningPage() {
+  // State
+  const [stage, setStage] = useState<Stage>("intro");
+  const [lines, setLines] = useState<ChatLine[]>(openingLines);
+  const [applicant, setApplicant] = useState<ContactFormValues | null>(null);
+  const [stepId, setStepId] = useState<string | null>(null);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [spouse, setSpouse] = useState<ContactFormValues | null>(null);
+  const [household, setHousehold] = useState<Record<string, string> | null>(null);
+  const [householdDraft, setHouseholdDraft] = useState<HouseholdDraft | null>(null);
+  const [conditionsDraft, setConditionsDraft] = useState<ConditionsDraft | null>(null);
+  const [financialsDraft, setFinancialsDraft] = useState<FinancialsDraft | null>(null);
+  const [editing, setEditing] = useState<Section | null>(null);
+  const [panelOpen, setPanelOpen] = useState(true);
+  const [expanded, setExpanded] = useState(false);
+  const [clarified, setClarified] = useState<string[]>([]);
+  const [requirements, setRequirements] = useState<Record<string, string> | null>(null);
+
+  const step = steps.find((s) => s.id === stepId);
+
+  // Server
+  async function sendToPython(data: {
+    applicant: ContactFormValues | null;
+    answers: Record<string, string>;
+    spouse: ContactFormValues | "N/A" | null;
+    requirements: Record<string, string> | null;
+    household: Record<string, string>;
+  }) {
+    const response = await fetch("http://localhost:8000/prescreening", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Python server returned ${response.status}`);
+    }
+    const result = await response.json();
+    console.log(`Saved to ${result.file}`);
+  }
+
+  // Questions
+  function goTo(nextId: string | null, before: ChatLine[]) {
+    const next = steps.find((s) => s.id === nextId);
+    const intro = (next?.intro ?? []).map((l): ChatLine => ({ from: "bot", ...l }));
+    setLines((current) => [
+      ...current,
+      ...before,
+      ...intro,
+      ...(next ? [bot(next.text)] : closingMessages.map(bot)),
+    ]);
+    setStepId(next ? next.id : null);
+    setExpanded(false);
+    if (next && next.type !== "choice" && next.type !== "text") setPanelOpen(true);
+  }
+
+  function handleForm(values: ContactFormValues) {
+    console.log(values);
+    setApplicant(values);
+    setStage("summary");
+    goTo(firstStepId, [
+      submitted("Personal information", "applicant"),
+      bot(`Thanks, ${values.firstName}!`),
+    ]);
+  }
+
+  function handleConditions(text: string, draft: ConditionsDraft) {
+    if (step?.type !== "conditions") return;
+    setAnswers((current) => ({ ...current, livingConditions: text }));
+    setConditionsDraft(draft);
+    goTo(step.next, [submitted("Living conditions", "conditions")]);
+  }
+
+  async function handleFinancials(values: Record<string, string>, draft: FinancialsDraft) {
+    if (step?.type !== "financials") return;
+    const updated = { ...answers, ...values };
+    if (!(await save(updated, household ?? {}))) return;
+    setAnswers(updated);
+    setFinancialsDraft(draft);
+    goTo(step.next, [submitted("Financial information", "financials")]);
+  }
+
+  function handleSpouse(values: ContactFormValues) {
+    if (step?.type !== "form") return;
+    setSpouse(values);
+    goTo(step.next, [submitted("Spouse or partner information", "spouse")]);
+  }
+
+  async function save(
+    currentAnswers: Record<string, string>,
+    currentHousehold: Record<string, string>
+  ) {
+    try {
+      await sendToPython({
+        applicant,
+        answers: currentAnswers,
+        spouse: currentAnswers.spouse === "No" ? "N/A" : spouse,
+        requirements,
+        household: currentHousehold,
+      });
+      return true;
+    } catch (error) {
+      setLines((current) => [
+        ...current,
+        bot(error instanceof Error ? error.message : "Could not send application."),
+      ]);
+      return false;
+    }
+  }
+
+  function handleHousehold(values: Record<string, string>, draft: HouseholdDraft) {
+    if (step?.type !== "household") return;
+    setHousehold(values);
+    setHouseholdDraft(draft);
+    const hasChildren = draft.children.length > 0;
+    goTo(hasChildren ? step.next : "conditions", [
+      submitted("Housing information", "household"),
+    ]);
+  }
+
+  // Edit
+  function startEdit(section: Section) {
+    setEditing(section);
+    setPanelOpen(true);
+  }
+
+  function cancelEdit() {
+    setEditing(null);
+    setExpanded(false);
+  }
+
+  function finishEdit(label: string, section: Section) {
+    setEditing(null);
+    setExpanded(false);
+    setLines((current) => [...current, submitted(`${label} (updated)`, section)]);
+  }
+
+  function handleEditApplicant(values: ContactFormValues) {
+    setApplicant(values);
+    finishEdit("Personal information", "applicant");
+  }
+
+  function handleEditConditions(text: string, draft: ConditionsDraft) {
+    setAnswers((current) => ({ ...current, livingConditions: text }));
+    setConditionsDraft(draft);
+    finishEdit("Living conditions", "conditions");
+  }
+
+  function handleEditFinancials(values: Record<string, string>, draft: FinancialsDraft) {
+    setAnswers((current) => ({ ...current, ...values }));
+    setFinancialsDraft(draft);
+    finishEdit("Financial information", "financials");
+  }
+
+  function handleEditSpouse(values: ContactFormValues) {
+    setSpouse(values);
+    finishEdit("Spouse or partner information", "spouse");
+  }
+
+  function handleEditRequirements(values: Record<string, string>) {
+    setRequirements(values);
+    finishEdit("Program requirements", "requirements");
+  }
+
+  function handleEditHousehold(values: Record<string, string>, draft: HouseholdDraft) {
+    setHousehold(values);
+    setHouseholdDraft(draft);
+    finishEdit("Housing information", "household");
+  }
+
+  function handleRequirements(values: Record<string, string>) {
+    if (step?.type !== "requirements") return;
+    setRequirements(values);
+    goTo(step.next, [submitted("Program requirements", "requirements")]);
+  }
+
+  function handleClarify(item: Clarification) {
+    const message = item.message;
+    if (!message) return;
+    setClarified((current) => [...current, item.label]);
+    setLines((current) => [
+      ...current,
+      { from: "user", text: item.label },
+      bot(message),
+    ]);
+  }
+
+  function handleAnswer(text: string, nextId: string | null, reply?: string) {
+    if (!step) return;
+    const updated = { ...answers, [step.id]: text };
+    setAnswers(updated);
+    goTo(nextId, [
+      { from: "user", text: text || "Skip" },
+      ...(reply ? [bot(reply)] : []),
+    ]);
+  }
+
+  const clarifyOptions = clarifications.filter((c) => !clarified.includes(c.label));
+
+  return (
+    <div className="prescreening">
+      {/* Banner */}
+      <section className="hero">
+        <div className="container hero-inner">
+          <div className="title-banner">
+            <h1>
+              Pre-Screening
+              <br />
+              Application
+            </h1>
+          </div>
+        </div>
+      </section>
+
+      {/* Content */}
+      <main className="content">
+        <div className="container">
+          <div
+            className={`card ${stage !== "intro" ? "card-with-form" : ""} ${
+              panelOpen ? "" : "card-panel-closed"
+            } ${expanded ? "card-expanded" : ""}`}
+          >
+            {/* Chat */}
+            <ChatConversation
+              lines={lines}
+              onFinish={() => setStage((s) => (s === "intro" ? "form" : s))}
+              inputEnabled={step?.type === "text"}
+              inputPlaceholder={step?.type === "text" ? step.placeholder : undefined}
+              onSend={(text) => {
+                if (step?.type === "text") handleAnswer(text, step.next);
+              }}
+              onLineClick={(key) => startEdit(key as Section)}
+            >
+              {step?.type === "choice" && (
+                <ChatChoices
+                  options={step.choices.map((c) => c.label)}
+                  onPick={(i) =>
+                    handleAnswer(
+                      step.choices[i].label,
+                      step.choices[i].next,
+                      step.choices[i].reply
+                    )
+                  }
+                />
+              )}
+              {step?.type === "requirements" && clarifyOptions.length > 0 && (
+                <div className="chat-clarify">
+                  <span className="chat-clarify-label">{clarifyLabel}</span>
+                  <ChatChoices
+                    options={clarifyOptions.map((c) => c.label)}
+                    disabled={clarifyOptions.filter((c) => !c.message).map((c) => c.label)}
+                    onPick={(i) => handleClarify(clarifyOptions[i])}
+                  />
+                </div>
+              )}
+            </ChatConversation>
+
+            {/* Tab */}
+            {stage !== "intro" && (
+              <button
+                type="button"
+                className="panel-tab"
+                aria-label={panelOpen ? "Hide information panel" : "Show information panel"}
+                aria-expanded={panelOpen}
+                onClick={() => setPanelOpen((open) => !open)}
+              >
+                {panelOpen ? "›" : "‹"}
+              </button>
+            )}
+
+            {/* Form */}
+            {stage !== "intro" && (
+              <div className="form-panel">
+                {stage === "form" ? (
+                  <ContactForm onSubmit={handleForm} />
+                ) : editing === "applicant" && applicant ? (
+                  <>
+                    <ContactForm
+                      key="edit-applicant"
+                      title="Edit your information"
+                      initialValues={applicant}
+                      onSubmit={handleEditApplicant}
+                    />
+                    <div className="edit-cancel">
+                      <Button variant="secondary" onClick={cancelEdit}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </>
+                ) : editing === "conditions" && conditionsDraft ? (
+                  <>
+                    <ConditionsForm
+                      key="edit-conditions"
+                      title="Edit living conditions"
+                      options={conditionOptions}
+                      initialDraft={conditionsDraft}
+                      onSubmit={handleEditConditions}
+                    />
+                    <div className="edit-cancel">
+                      <Button variant="secondary" onClick={cancelEdit}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </>
+                ) : editing === "financials" && financialsDraft ? (
+                  <>
+                    <FinancialsForm
+                      key="edit-financials"
+                      title="Edit financial information"
+                      initialDraft={financialsDraft}
+                      onSubmit={handleEditFinancials}
+                    />
+                    <div className="edit-cancel">
+                      <Button variant="secondary" onClick={cancelEdit}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </>
+                ) : editing === "spouse" && spouse ? (
+                  <>
+                    <ContactForm
+                      key="edit-spouse"
+                      title="Edit spouse or partner information"
+                      initialValues={spouse}
+                      onSubmit={handleEditSpouse}
+                    />
+                    <div className="edit-cancel">
+                      <Button variant="secondary" onClick={cancelEdit}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </>
+                ) : editing === "requirements" && requirements ? (
+                  <>
+                    <RequirementsForm
+                      key="edit-requirements"
+                      title="Edit program requirements"
+                      questions={requirementQuestions}
+                      initialValues={requirements}
+                      onSubmit={handleEditRequirements}
+                    />
+                    <div className="edit-cancel">
+                      <Button variant="secondary" onClick={cancelEdit}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </>
+                ) : editing === "household" && household && householdDraft ? (
+                  <>
+                    <HouseholdForm
+                      key="edit-household"
+                      title="Edit housing information"
+                      questions={householdQuestions}
+                      initialDraft={householdDraft}
+                      onSubmit={handleEditHousehold}
+                    />
+                    <div className="edit-cancel">
+                      <Button variant="secondary" onClick={cancelEdit}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </>
+                ) : step?.type === "form" ? (
+                  <ContactForm
+                    key={step.id}
+                    title={step.title}
+                    onSubmit={handleSpouse}
+                  />
+                ) : step?.type === "conditions" ? (
+                  <ConditionsForm
+                    key={step.id}
+                    options={conditionOptions}
+                    onSubmit={handleConditions}
+                  />
+                ) : step?.type === "financials" ? (
+                  <FinancialsForm key={step.id} onSubmit={handleFinancials} />
+                ) : step?.type === "household" ? (
+                  <HouseholdForm
+                    key={step.id}
+                    questions={householdQuestions}
+                    onSubmit={handleHousehold}
+                  />
+                ) : step?.type === "requirements" ? (
+                  <RequirementsForm
+                    key={step.id}
+                    questions={requirementQuestions}
+                    onSubmit={handleRequirements}
+                  />
+                ) : applicant ? (
+                  <div className="summary-stack">
+                    <ContactSummary
+                      values={applicant}
+                      onEdit={() => startEdit("applicant")}
+                    />
+                    {(spouse || answers.spouse === "No") && (
+                      <ContactSummary
+                        title="Spouse or partner"
+                        values={spouse ?? "N/A"}
+                        onEdit={spouse ? () => startEdit("spouse") : undefined}
+                      />
+                    )}
+                    {requirements && (
+                      <RequirementsSummary
+                        questions={requirementQuestions}
+                        values={requirements}
+                        onEdit={() => startEdit("requirements")}
+                      />
+                    )}
+                    {household && (
+                      <RequirementsSummary
+                        title="Housing information"
+                        questions={householdLabels}
+                        values={household}
+                        onEdit={() => startEdit("household")}
+                      />
+                    )}
+                    {answers.livingConditions && (
+                      <AnswerSummary
+                        title="Living conditions"
+                        answer={answers.livingConditions}
+                        onEdit={() => startEdit("conditions")}
+                      />
+                    )}
+                    {answers.monthlyIncome && (
+                      <RequirementsSummary
+                        title="Financial information"
+                        questions={financialLabels}
+                        values={answers}
+                        onEdit={() => startEdit("financials")}
+                      />
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}

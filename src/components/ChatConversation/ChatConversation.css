@@ -1,8 +1,16 @@
 /* Start */
 .chat-start {
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
   min-height: 400px;
+}
+
+.chat-start h2 {
+  margin: 0;
+  font-size: 2rem;
 }
 
 /* Messages */
