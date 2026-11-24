@@ -15,8 +15,6 @@ export type HouseholdQuestions = {
   residency: Question;
   adults: Question;
   children: Question;
-  taxes: Question;
-  income: Question;
 };
 
 export type Person = { first: string; last: string; age: string };
@@ -25,8 +23,6 @@ export type HouseholdDraft = {
   residency: string;
   adults: Person[];
   children: Person[];
-  taxes: string;
-  income: string;
 };
 
 type HouseholdFormProps = {
@@ -35,6 +31,10 @@ type HouseholdFormProps = {
   title?: string;
   initialDraft?: HouseholdDraft;
 };
+
+// Residency
+const AMOUNTS = Array.from({ length: 50 }, (_, i) => String(i + 1));
+const UNITS = ["Months", "Years"];
 
 // People
 const emptyPerson: Person = { first: "", last: "", age: "" };
@@ -112,18 +112,21 @@ export default function HouseholdForm({
   initialDraft,
 }: HouseholdFormProps) {
   // State
-  const [residency, setResidency] = useState(initialDraft?.residency ?? "");
+  const [residencyAmount, setResidencyAmount] = useState(
+    initialDraft?.residency.split(" ")[0] ?? ""
+  );
+  const [residencyUnit, setResidencyUnit] = useState(
+    initialDraft?.residency.split(" ")[1] ?? "Years"
+  );
   const [adults, setAdults] = useState<Person[]>(initialDraft?.adults ?? []);
   const [children, setChildren] = useState<Person[]>(initialDraft?.children ?? []);
-  const [taxes, setTaxes] = useState(initialDraft?.taxes ?? "");
-  const [income, setIncome] = useState(initialDraft?.income ?? "");
+
+  const residency = residencyAmount ? `${residencyAmount} ${residencyUnit}` : "";
 
   const complete = Boolean(
-    residency.trim() &&
+    residency &&
       adults.every(filled) &&
-      children.every(filled) &&
-      taxes &&
-      income.trim()
+      children.every(filled)
   );
 
   // Submit
@@ -131,13 +134,11 @@ export default function HouseholdForm({
     event.preventDefault();
     onSubmit(
       {
-        residency: residency.trim(),
+        residency,
         adults: list(adults),
         children: list(children),
-        taxes,
-        income: income.trim(),
       },
-      { residency, adults, children, taxes, income }
+      { residency, adults, children }
     );
   }
 
@@ -151,11 +152,37 @@ export default function HouseholdForm({
         <legend>
           1. {questions.residency.text} <FieldMark />
         </legend>
-        <input
-          className="household-input"
-          value={residency}
-          onChange={(e) => setResidency(e.target.value)}
-        />
+        <div className="field-row">
+          <div className="field">
+            <select
+              aria-label="Length of residency"
+              value={residencyAmount}
+              onChange={(e) => setResidencyAmount(e.target.value)}
+            >
+              <option value="" disabled>
+                --
+              </option>
+              {AMOUNTS.map((amount) => (
+                <option key={amount} value={amount}>
+                  {amount}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <select
+              aria-label="Months or years"
+              value={residencyUnit}
+              onChange={(e) => setResidencyUnit(e.target.value)}
+            >
+              {UNITS.map((unit) => (
+                <option key={unit} value={unit}>
+                  {unit}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
         {questions.residency.note && (
           <p className="requirement-note">{questions.residency.note}</p>
         )}
@@ -181,41 +208,6 @@ export default function HouseholdForm({
           <p className="requirement-hint">{questions.children.hint}</p>
         )}
         <PersonList people={children} onChange={setChildren} label="Child" />
-      </fieldset>
-
-      {/* Taxes */}
-      <fieldset className="requirement">
-        <legend>
-          4. {questions.taxes.text} <FieldMark />
-        </legend>
-        {questions.taxes.hint && (
-          <p className="requirement-hint">{questions.taxes.hint}</p>
-        )}
-        <div className="requirement-options">
-          {["Yes", "No"].map((option) => (
-            <label className="requirement-option" key={option}>
-              <input
-                type="checkbox"
-                checked={taxes === option}
-                onChange={() => setTaxes(taxes === option ? "" : option)}
-              />
-              {option}
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      {/* Income */}
-      <fieldset className="requirement">
-        <legend>
-          5. {questions.income.text} <FieldMark />
-        </legend>
-        <input
-          className="household-input"
-          inputMode="decimal"
-          value={income}
-          onChange={(e) => setIncome(e.target.value.replace(/[^0-9.]/g, ""))}
-        />
       </fieldset>
 
       {/* Button */}

@@ -7,7 +7,6 @@ export type ContactFormValues = Record<string, string>;
 
 type ContactFormProps = {
   onSubmit: (values: ContactFormValues) => void;
-  addressOptional?: boolean;
   title?: string;
   initialValues?: ContactFormValues;
 };
@@ -69,7 +68,6 @@ const STATES = [
 
 export default function ContactForm({
   onSubmit,
-  addressOptional = false,
   title = "Your information",
   initialValues,
 }: ContactFormProps) {
@@ -80,7 +78,7 @@ export default function ContactForm({
   // Validity
   useEffect(() => {
     if (formRef.current) setComplete(formRef.current.checkValidity());
-  }, [addressOptional]);
+  }, []);
 
   // Submit
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -107,13 +105,13 @@ export default function ContactForm({
           <span>
             First name <FieldMark />
           </span>
-          <input name="firstName" placeholder="John" defaultValue={initialValues?.firstName} type="text" autoComplete="given-name" required />
+          <input name="firstName" placeholder="First name" defaultValue={initialValues?.firstName} type="text" autoComplete="given-name" required />
         </label>
         <label className="field">
           <span>
             Last name <FieldMark />
           </span>
-          <input name="lastName" placeholder="Doe" defaultValue={initialValues?.lastName} type="text" autoComplete="family-name" required />
+          <input name="lastName" placeholder="Last name" defaultValue={initialValues?.lastName} type="text" autoComplete="family-name" required />
         </label>
       </div>
 
@@ -122,7 +120,7 @@ export default function ContactForm({
         <span>
             Phone # <FieldMark />
           </span>
-        <input name="phone" placeholder="337-373-3773" defaultValue={initialValues?.phone} type="tel" pattern="\(?\d{3}\)?[\s.\-]?\d{3}[\s.\-]?\d{4}" autoComplete="tel" required />
+        <input name="phone" placeholder="(309)-555-0123" defaultValue={initialValues?.phone} type="tel" pattern="\(?\d{3}\)?[\s.\-]?\d{3}[\s.\-]?\d{4}" autoComplete="tel" required />
       </label>
 
       {/* Email */}
@@ -130,31 +128,31 @@ export default function ContactForm({
         <span>
             Email <FieldMark />
           </span>
-        <input name="email" placeholder="johnDoe@email.com" defaultValue={initialValues?.email} type="email" pattern="[^@\s]+@[^@\s]+\.[^@\s]+" autoComplete="email" required />
+        <input name="email" placeholder="FirstLast@example.com" defaultValue={initialValues?.email} type="email" pattern="[^@\s]+@[^@\s]+\.[^@\s]+" autoComplete="email" required />
       </label>
 
       {/* Address */}
       <label className="field">
         <span>
-            Address <FieldMark optional={addressOptional} />
+            Address <FieldMark />
           </span>
-        <input name="address" placeholder="123 West St" defaultValue={initialValues?.address} type="text" autoComplete="street-address" required={!addressOptional} />
+        <input name="address" placeholder="123 Main St" defaultValue={initialValues?.address} type="text" autoComplete="street-address" required />
       </label>
 
       {/* Location */}
       <div className="field-row field-row-3">
         <label className="field">
           <span>
-            City <FieldMark optional={addressOptional} />
+            City <FieldMark />
           </span>
-          <input name="city" placeholder="Peoria" defaultValue={initialValues?.city} type="text" autoComplete="address-level2" required={!addressOptional} />
+          <input name="city" placeholder="Peoria" defaultValue={initialValues?.city} type="text" autoComplete="address-level2" required />
         </label>
         <label className="field">
           <span>
-            State <FieldMark optional={addressOptional} />
+            State <FieldMark />
           </span>
-          <select name="state" autoComplete="address-level1" defaultValue={initialValues?.state ?? ""} required={!addressOptional}>
-            <option value="" disabled={!addressOptional}>
+          <select name="state" autoComplete="address-level1" defaultValue={initialValues?.state ?? ""} required>
+            <option value="" disabled>
               --
             </option>
             {STATES.map((abbr) => (
@@ -166,7 +164,7 @@ export default function ContactForm({
         </label>
         <label className="field">
           <span>
-            Zip <FieldMark optional={addressOptional} />
+            Zip <FieldMark />
           </span>
           <input
             name="zip"
@@ -176,7 +174,7 @@ export default function ContactForm({
             pattern="[0-9]{5}"
             maxLength={5}
             autoComplete="postal-code"
-            required={!addressOptional}
+            required
           />
         </label>
       </div>

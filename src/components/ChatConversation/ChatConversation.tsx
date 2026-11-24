@@ -71,8 +71,11 @@ export default function ChatConversation({
     const dock = dockRef.current;
     const box = conversationRef.current;
     if (!dock || !box) return;
-    const update = () =>
+    const update = () => {
       box.style.setProperty("--dock-height", `${dock.offsetHeight}px`);
+      const el = messagesRef.current;
+      if (el) el.scrollTo({ top: el.scrollHeight });
+    };
     update();
     const observer = new ResizeObserver(update);
     observer.observe(dock);
@@ -83,7 +86,8 @@ export default function ChatConversation({
   if (!started) {
     return (
       <div className="chat-start">
-        <Button onClick={() => setStarted(true)}>Click here to get started</Button>
+        <h2>Ready to apply?</h2>
+        <Button onClick={() => setStarted(true)}>Start Pre-Screening Application</Button>
       </div>
     );
   }

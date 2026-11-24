@@ -1,8 +1,16 @@
 /* Start */
 .chat-start {
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
   min-height: 400px;
+}
+
+.chat-start h2 {
+  margin: 0;
+  font-size: 2rem;
 }
 
 /* Messages */
@@ -17,6 +25,8 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #c4c8cf transparent;
   padding-right: 16px;
   padding-bottom: calc(var(--dock-height, 0px) + 12px);
   display: flex;

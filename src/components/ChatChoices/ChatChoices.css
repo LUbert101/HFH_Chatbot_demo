@@ -7,3 +7,8 @@
   gap: 8px;
   margin-top: 8px;
 }
+
+.chat-choices .btn {
+  padding: 0.6rem 1.1rem;
+  font-weight: 400;
+}

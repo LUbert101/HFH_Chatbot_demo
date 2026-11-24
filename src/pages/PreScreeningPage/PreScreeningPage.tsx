@@ -1,15 +1,20 @@
 import { useState } from "react";
-import AnswerForm from "../../components/AnswerForm/AnswerForm";
-import AnswerSummary from "../../components/AnswerSummary/AnswerSummary";
 import Button from "../../components/Button/Button";
 import ChatChoices from "../../components/ChatChoices/ChatChoices";
 import ChatConversation, {
   type ChatLine,
 } from "../../components/ChatConversation/ChatConversation";
+import AnswerSummary from "../../components/AnswerSummary/AnswerSummary";
+import ConditionsForm, {
+  type ConditionsDraft,
+} from "../../components/ConditionsForm/ConditionsForm";
 import ContactForm, {
   type ContactFormValues,
 } from "../../components/ContactForm/ContactForm";
 import ContactSummary from "../../components/ContactSummary/ContactSummary";
+import FinancialsForm, {
+  type FinancialsDraft,
+} from "../../components/FinancialsForm/FinancialsForm";
 import HouseholdForm, {
   type HouseholdDraft,
 } from "../../components/HouseholdForm/HouseholdForm";
@@ -18,9 +23,9 @@ import RequirementsSummary from "../../components/RequirementsSummary/Requiremen
 import {
   clarifications,
   clarifyLabel,
-  closingMessage,
-  contactLabel,
-  contactMessage,
+  closingMessages,
+  conditionOptions,
+  financialLabels,
   disclaimer,
   firstStepId,
   householdLabels,
@@ -33,9 +38,7 @@ import "./PreScreeningPage.css";
 
 type Stage = "intro" | "form" | "summary";
 
-type Section = "applicant" | "housing" | "spouse" | "requirements" | "household";
-
-const unstableLabel = "I have unstable housing / other";
+type Section = "applicant" | "conditions" | "financials" | "spouse" | "requirements" | "household";
 
 // Messages
 function bot(text: string): ChatLine {
@@ -45,8 +48,6 @@ function bot(text: string): ChatLine {
 function submitted(text: string, section: Section): ChatLine {
   return { from: "user", text, tone: "success", editKey: section };
 }
-
-const housingQuestion = steps.find((s) => s.id === "housingDetails")?.text;
 
 const openingLines: ChatLine[] = [
   bot(
@@ -65,11 +66,11 @@ export default function PreScreeningPage() {
   const [applicant, setApplicant] = useState<ContactFormValues | null>(null);
   const [stepId, setStepId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [unstable, setUnstable] = useState(false);
-  const [contactShown, setContactShown] = useState(false);
   const [spouse, setSpouse] = useState<ContactFormValues | null>(null);
   const [household, setHousehold] = useState<Record<string, string> | null>(null);
   const [householdDraft, setHouseholdDraft] = useState<HouseholdDraft | null>(null);
+  const [conditionsDraft, setConditionsDraft] = useState<ConditionsDraft | null>(null);
+  const [financialsDraft, setFinancialsDraft] = useState<FinancialsDraft | null>(null);
   const [editing, setEditing] = useState<Section | null>(null);
   const [panelOpen, setPanelOpen] = useState(true);
   const [expanded, setExpanded] = useState(false);
@@ -78,27 +79,26 @@ export default function PreScreeningPage() {
 
   const step = steps.find((s) => s.id === stepId);
 
-  // Send pre-screening data to the Python server.
+  // Server
   async function sendToPython(data: {
-  applicant: ContactFormValues | null;
-  answers: Record<string, string>;
-  spouse: ContactFormValues | "N/A" | null;
-  requirements: Record<string, string> | null;
-  household: Record<string, string>;
-}) {
-  const response = await fetch("http://localhost:8000/prescreening", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
+    applicant: ContactFormValues | null;
+    answers: Record<string, string>;
+    spouse: ContactFormValues | "N/A" | null;
+    requirements: Record<string, string> | null;
+    household: Record<string, string>;
+  }) {
+    const response = await fetch("http://localhost:8000/prescreening", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
 
-  if (!response.ok) {
-    throw new Error(`Python server returned ${response.status}`);
+    if (!response.ok) {
+      throw new Error(`Python server returned ${response.status}`);
+    }
+    const result = await response.json();
+    console.log(`Saved to ${result.file}`);
   }
-  // Log the saved file path.
-  const result = await response.json();
-  console.log(`Saved to ${result.file}`);
-}
 
   // Questions
   function goTo(nextId: string | null, before: ChatLine[]) {
@@ -108,7 +108,7 @@ export default function PreScreeningPage() {
       ...current,
       ...before,
       ...intro,
-      bot(next ? next.text : closingMessage),
+      ...(next ? [bot(next.text)] : closingMessages.map(bot)),
     ]);
     setStepId(next ? next.id : null);
     setExpanded(false);
@@ -119,48 +119,66 @@ export default function PreScreeningPage() {
     console.log(values);
     setApplicant(values);
     setStage("summary");
-    goTo(unstable ? "housingDetails" : firstStepId, [
+    goTo(firstStepId, [
       submitted("Personal information", "applicant"),
       bot(`Thanks, ${values.firstName}!`),
     ]);
   }
 
-  // Handle spouse form submission.
+  function handleConditions(text: string, draft: ConditionsDraft) {
+    if (step?.type !== "conditions") return;
+    setAnswers((current) => ({ ...current, livingConditions: text }));
+    setConditionsDraft(draft);
+    goTo(step.next, [submitted("Living conditions", "conditions")]);
+  }
+
+  async function handleFinancials(values: Record<string, string>, draft: FinancialsDraft) {
+    if (step?.type !== "financials") return;
+    const updated = { ...answers, ...values };
+    if (!(await save(updated, household ?? {}))) return;
+    setAnswers(updated);
+    setFinancialsDraft(draft);
+    goTo(step.next, [submitted("Financial information", "financials")]);
+  }
+
   function handleSpouse(values: ContactFormValues) {
     if (step?.type !== "form") return;
     setSpouse(values);
     goTo(step.next, [submitted("Spouse or partner information", "spouse")]);
   }
 
-  // Handle household form submission.
-  async function handleHousehold(
-  values: Record<string, string>,
-  draft: HouseholdDraft
-) {
-  if (step?.type !== "household") return;
+  async function save(
+    currentAnswers: Record<string, string>,
+    currentHousehold: Record<string, string>
+  ) {
+    try {
+      await sendToPython({
+        applicant,
+        answers: currentAnswers,
+        spouse: currentAnswers.spouse === "No" ? "N/A" : spouse,
+        requirements,
+        household: currentHousehold,
+      });
+      return true;
+    } catch (error) {
+      setLines((current) => [
+        ...current,
+        bot(error instanceof Error ? error.message : "Could not send application."),
+      ]);
+      return false;
+    }
+  }
 
-  setHousehold(values);
-  setHouseholdDraft(draft);
+  function handleHousehold(values: Record<string, string>, draft: HouseholdDraft) {
+    if (step?.type !== "household") return;
+    setHousehold(values);
+    setHouseholdDraft(draft);
+    const hasChildren = draft.children.length > 0;
+    goTo(hasChildren ? step.next : "conditions", [
+      submitted("Housing information", "household"),
+    ]);
+  }
 
-  // Send the pre-screening data to the Python server.
- try {
-  await sendToPython({
-    applicant,
-    answers,
-    spouse: answers.spouse === "No" ? "N/A" : spouse,
-    requirements,
-    household: values,
-  });
-} catch (error) {
-  setLines((current) => [
-    ...current,
-    bot(error instanceof Error ? error.message : "Could not send application."),
-  ]);
-  return;
-}
-
-  goTo(step.next, [submitted("Housing information", "household")]);
-}
   // Edit
   function startEdit(section: Section) {
     setEditing(section);
@@ -183,9 +201,16 @@ export default function PreScreeningPage() {
     finishEdit("Personal information", "applicant");
   }
 
-  function handleEditHousing(text: string) {
-    setAnswers((current) => ({ ...current, housingDetails: text }));
-    finishEdit("Unstable housing", "housing");
+  function handleEditConditions(text: string, draft: ConditionsDraft) {
+    setAnswers((current) => ({ ...current, livingConditions: text }));
+    setConditionsDraft(draft);
+    finishEdit("Living conditions", "conditions");
+  }
+
+  function handleEditFinancials(values: Record<string, string>, draft: FinancialsDraft) {
+    setAnswers((current) => ({ ...current, ...values }));
+    setFinancialsDraft(draft);
+    finishEdit("Financial information", "financials");
   }
 
   function handleEditSpouse(values: ContactFormValues) {
@@ -210,18 +235,6 @@ export default function PreScreeningPage() {
     goTo(step.next, [submitted("Program requirements", "requirements")]);
   }
 
-  function handleUnstable() {
-    setUnstable(true);
-    setAnswers((current) => ({ ...current, housing: unstableLabel }));
-    setLines((current) => [
-      ...current,
-      { from: "user", text: unstableLabel },
-      bot(
-        "No problem. You can leave the address blank, and I'll ask about your situation after you submit."
-      ),
-    ]);
-  }
-
   function handleClarify(item: Clarification) {
     const message = item.message;
     if (!message) return;
@@ -230,15 +243,6 @@ export default function PreScreeningPage() {
       ...current,
       { from: "user", text: item.label },
       bot(message),
-    ]);
-  }
-
-  function handleContact() {
-    setContactShown(true);
-    setLines((current) => [
-      ...current,
-      { from: "user", text: contactLabel },
-      bot(contactMessage),
     ]);
   }
 
@@ -288,9 +292,6 @@ export default function PreScreeningPage() {
               }}
               onLineClick={(key) => startEdit(key as Section)}
             >
-              {stage === "form" && !unstable && (
-                <ChatChoices options={[unstableLabel]} onPick={handleUnstable} />
-              )}
               {step?.type === "choice" && (
                 <ChatChoices
                   options={step.choices.map((c) => c.label)}
@@ -313,9 +314,6 @@ export default function PreScreeningPage() {
                   />
                 </div>
               )}
-              {step?.type === "text" && step.showContact && !contactShown && (
-                <ChatChoices options={[contactLabel]} onPick={handleContact} />
-              )}
             </ChatConversation>
 
             {/* Tab */}
@@ -334,31 +332,14 @@ export default function PreScreeningPage() {
             {/* Form */}
             {stage !== "intro" && (
               <div className="form-panel">
-                <div className="panel-bar">
-                  <button
-                    type="button"
-                    className="panel-expand"
-                    onClick={() => setExpanded((open) => !open)}
-                  >
-                    {expanded ? "Exit fullscreen" : "Fullscreen"}
-                  </button>
-                </div>
                 {stage === "form" ? (
-                  <>
-                    <ContactForm onSubmit={handleForm} addressOptional={unstable} />
-                    {expanded && !unstable && (
-                      <div className="panel-unstable">
-                        <ChatChoices options={[unstableLabel]} onPick={handleUnstable} />
-                      </div>
-                    )}
-                  </>
+                  <ContactForm onSubmit={handleForm} />
                 ) : editing === "applicant" && applicant ? (
                   <>
                     <ContactForm
                       key="edit-applicant"
                       title="Edit your information"
                       initialValues={applicant}
-                      addressOptional={unstable}
                       onSubmit={handleEditApplicant}
                     />
                     <div className="edit-cancel">
@@ -367,14 +348,28 @@ export default function PreScreeningPage() {
                       </Button>
                     </div>
                   </>
-                ) : editing === "housing" && answers.housingDetails ? (
+                ) : editing === "conditions" && conditionsDraft ? (
                   <>
-                    <AnswerForm
-                      key="edit-housing"
-                      title="Edit unstable housing"
-                      question={housingQuestion}
-                      initialValue={answers.housingDetails}
-                      onSubmit={handleEditHousing}
+                    <ConditionsForm
+                      key="edit-conditions"
+                      title="Edit living conditions"
+                      options={conditionOptions}
+                      initialDraft={conditionsDraft}
+                      onSubmit={handleEditConditions}
+                    />
+                    <div className="edit-cancel">
+                      <Button variant="secondary" onClick={cancelEdit}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </>
+                ) : editing === "financials" && financialsDraft ? (
+                  <>
+                    <FinancialsForm
+                      key="edit-financials"
+                      title="Edit financial information"
+                      initialDraft={financialsDraft}
+                      onSubmit={handleEditFinancials}
                     />
                     <div className="edit-cancel">
                       <Button variant="secondary" onClick={cancelEdit}>
@@ -388,7 +383,6 @@ export default function PreScreeningPage() {
                       key="edit-spouse"
                       title="Edit spouse or partner information"
                       initialValues={spouse}
-                      addressOptional={unstable}
                       onSubmit={handleEditSpouse}
                     />
                     <div className="edit-cancel">
@@ -431,9 +425,16 @@ export default function PreScreeningPage() {
                   <ContactForm
                     key={step.id}
                     title={step.title}
-                    addressOptional={unstable}
                     onSubmit={handleSpouse}
                   />
+                ) : step?.type === "conditions" ? (
+                  <ConditionsForm
+                    key={step.id}
+                    options={conditionOptions}
+                    onSubmit={handleConditions}
+                  />
+                ) : step?.type === "financials" ? (
+                  <FinancialsForm key={step.id} onSubmit={handleFinancials} />
                 ) : step?.type === "household" ? (
                   <HouseholdForm
                     key={step.id}
@@ -452,13 +453,6 @@ export default function PreScreeningPage() {
                       values={applicant}
                       onEdit={() => startEdit("applicant")}
                     />
-                    {answers.housingDetails && (
-                      <AnswerSummary
-                        title="Unstable housing"
-                        answer={answers.housingDetails}
-                        onEdit={() => startEdit("housing")}
-                      />
-                    )}
                     {(spouse || answers.spouse === "No") && (
                       <ContactSummary
                         title="Spouse or partner"
@@ -479,6 +473,21 @@ export default function PreScreeningPage() {
                         questions={householdLabels}
                         values={household}
                         onEdit={() => startEdit("household")}
+                      />
+                    )}
+                    {answers.livingConditions && (
+                      <AnswerSummary
+                        title="Living conditions"
+                        answer={answers.livingConditions}
+                        onEdit={() => startEdit("conditions")}
+                      />
+                    )}
+                    {answers.monthlyIncome && (
+                      <RequirementsSummary
+                        title="Financial information"
+                        questions={financialLabels}
+                        values={answers}
+                        onEdit={() => startEdit("financials")}
                       />
                     )}
                   </div>
