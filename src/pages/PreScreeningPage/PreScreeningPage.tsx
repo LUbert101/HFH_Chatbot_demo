@@ -51,11 +51,11 @@ function submitted(text: string, section: Section): ChatLine {
 
 const openingLines: ChatLine[] = [
   bot(
-    "Hi, I'm the Habitat for Humanity chatbot, and I'll be here to assist you with your Pre-Screening application."
+    "Hi, I'm the Habitat for Humanity Peoria chatbot, and I'll be here to assist you with your Pre-Screening application."
   ),
   { from: "bot", text: disclaimer, tone: "warning" },
   bot(
-    "Lets get to know you! Go ahead and fill out form with your name, address, phone # and email!"
+    "Let's get to know you! Go ahead and fill out this form with your name, address, phone number, and email!"
   ),
 ];
 
