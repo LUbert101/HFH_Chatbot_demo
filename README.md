@@ -1,3 +1,11 @@
+# HFH_Chatbot_demo
+
+- To run back end: `py main.py`
+- Next, run the frontend: `npm run dev`
+
+## File Directory
+
+```
 main/
 ├ __pycache__/                       # Raw compiled Python from chatbot.py and main.py 
 | ├ chatbot.cpython-314.pyc
@@ -67,3 +75,4 @@ main/
 ├ tsconfig.json
 ├ tsconfig.node.json
 └ vite.config.ts
+```
